@@ -1,6 +1,7 @@
 import { PublicClient, testnet } from "@lens-protocol/client";
+import { storage } from "./storage";
 
 export const client = PublicClient.create({
   environment: testnet,
-  origin: "https://myappdomain.xyz",
-}) 
+  storage: storage
+}); 
