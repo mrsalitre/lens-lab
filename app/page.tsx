@@ -1,10 +1,9 @@
-import Image from "next/image";
-import { ProfileExample } from "./components/ProfileExample";
+import { ProfileExampleWrapper } from "./components/ProfileExample";
 
 export default function Home() {
   return (
     <main>
-      <ProfileExample />
+      <ProfileExampleWrapper />
     </main>
   );
 }

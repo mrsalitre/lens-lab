@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@lens-protocol/client": "^2.0.0-alpha.21",
+    "@lens-protocol/client": "0.0.0-canary-20241210173831",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
