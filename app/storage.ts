@@ -1,4 +1,4 @@
-import { getCookie, setCookie, deleteCookie } from "cookies-next";
+import { getCookie, setCookie } from "cookies-next";
 import { type IStorageProvider } from "@lens-protocol/client";
 
 export const storage: IStorageProvider = {

@@ -2,14 +2,68 @@
 
 import { useState, useEffect } from 'react';
 import { client } from '../client';
-import { createWalletClient, custom } from 'viem';
-import { mainnet } from 'viem/chains';
+import { createWalletClient, custom, type Chain } from 'viem';
 import { storage } from '../storage';
 import { currentSession } from '@lens-protocol/client/actions';
 
+// Add Lens Testnet chain definition
+const lensTestnet: Chain = {
+  id: 37111,
+  name: 'Lens Network Sepolia Testnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'GRASS',
+    symbol: 'GRASS',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://rpc.testnet.lens.dev'],
+    },
+    public: {
+      http: ['https://rpc.testnet.lens.dev'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Lens Block Explorer',
+      url: 'https://block-explorer.testnet.lens.dev',
+    },
+  },
+};
+
+// Add these type definitions
+type EIP1193EventMap = {
+  connect: (connectInfo: { chainId: string }) => void;
+  disconnect: (error: { code: number; message: string }) => void;
+  chainChanged: (chainId: string) => void;
+  accountsChanged: (accounts: string[]) => void;
+}
+
+type EIP1474Methods = {
+  eth_requestAccounts: [];
+  eth_accounts: [];
+  eth_chainId: [];
+  // Add other methods as needed
+}
+
+type EIP1193RequestFn<T> = <Method extends keyof T>(args: {
+  method: Method;
+  params?: T[Method];
+}) => Promise<unknown>;
+
 declare global {
   interface Window {
-    ethereum?: any;
+    ethereum?: {
+      on: <Event extends keyof EIP1193EventMap>(
+        event: Event,
+        listener: EIP1193EventMap[Event]
+      ) => void;
+      removeListener: <Event extends keyof EIP1193EventMap>(
+        event: Event,
+        listener: EIP1193EventMap[Event]
+      ) => void;
+      request: EIP1193RequestFn<EIP1474Methods>;
+    };
   }
 }
 
@@ -44,48 +98,6 @@ export function LensLogin() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      setIsLoading(true);
-      const session = await client.resumeSession();
-      
-      if (session.isOk()) {
-        const currentSessionResult = await currentSession(session.value);
-        
-        if (currentSessionResult.isOk()) {
-          // Clear local storage and state
-          await storage.removeItem('lens.credentials');
-          setIsAuthenticated(false);
-          
-          // Make a GraphQL request to revoke authentication
-          const response = await fetch('https://api.testnet.lens.dev/graphql', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${currentSessionResult.value.authenticationId}`,
-            },
-            body: JSON.stringify({
-              query: `
-                mutation RevokeAuthentication($request: RevokeAuthenticationRequest!) {
-                  revokeAuthentication(request: { authenticationId: "${currentSessionResult.value.authenticationId}" })
-                }
-              `
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to revoke authentication');
-          }
-        }
-      }
-    } catch (err) {
-      setError('Failed to logout: ' + (err instanceof Error ? err.message : 'Unknown error'));
-      console.error('Logout error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleLogin = async () => {
     setIsLoading(true);
     setError(null);
@@ -98,7 +110,7 @@ export function LensLogin() {
 
       // Create a wallet client
       const walletClient = createWalletClient({
-        chain: mainnet,
+        chain: lensTestnet,
         transport: custom(window.ethereum)
       });
 
